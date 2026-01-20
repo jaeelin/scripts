@@ -1,4 +1,4 @@
-setclipboard("https://discord.gg/rxpEc3pCMR")
+setclipboard("https://discord.gg/uxd")
 
 local udsploit_version = "1.0.0"
 

@@ -316,15 +316,6 @@ local sections = {
 
 tabs.Combat:Select()
 
-local function getRayOrigin(character)
-	local head = character:FindFirstChild("Head")
-	if head then
-		return head.Position
-	end
-	local hrp = character:FindFirstChild("HumanoidRootPart")
-	return hrp and hrp.Position
-end
-
 KillAll = sections.combat_left:Toggle({
 	Name = "Kill All",
 	Default = Core.Features.KillAll.Enabled,

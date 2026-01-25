@@ -668,40 +668,24 @@ function AvatarChanger:_create_ui()
 		end)
 	end
 	
+	local Tabs = {
+		Changer = {Page = changer, Button = changer_tab},
+		Customizer = {Page = customizer_page, Button = customizer_tab},
+		Favorited = {Page = favorited, Button = favorited_tab}
+	}
+
 	local function SwitchTab(Name: string)
-		if Name == "Changer" then
-			changer_tab.BackgroundColor3 = Theme.Accent
-			changer_tab.TextColor3 = Theme.Text
-			favorited_tab.BackgroundColor3 = Theme.Dark
-			favorited_tab.TextColor3 = Theme.SubText
-			customizer_tab.BackgroundColor3 = Theme.Dark
-			customizer_tab.TextColor3 = Theme.SubText
-			changer.Visible = true
-			favorited.Visible = false
-			customizer_page.Visible = false
-		elseif Name == "Customizer" then
-			customizer_tab.BackgroundColor3 = Theme.Accent
-			customizer_tab.TextColor3 = Theme.Text
-			changer_tab.BackgroundColor3 = Theme.Dark
-			changer_tab.TextColor3 = Theme.SubText
-			favorited_tab.BackgroundColor3 = Theme.Dark
-			favorited_tab.TextColor3 = Theme.SubText
-			customizer_page.Visible = true
-			favorited.Visible = false
-			changer.Visible = false
-		else
-			favorited_tab.BackgroundColor3 = Theme.Accent
-			favorited_tab.TextColor3 = Theme.Text
-			changer_tab.BackgroundColor3 = Theme.Dark
-			changer_tab.TextColor3 = Theme.SubText
-			customizer_tab.BackgroundColor3 = Theme.Dark
-			customizer_tab.TextColor3 = Theme.SubText
-			favorited.Visible = true
-			changer.Visible = false
-			customizer_page.Visible = false
+		for tab_name, data in next, Tabs do
+			local active = (tab_name == Name)
+			data.Page.Visible = active
+			data.Button.BackgroundColor3 = active and Theme.Accent or Theme.Dark
+			data.Button.TextColor3 = active and Theme.Text or Theme.SubText
+		end
+
+		if Name == "Favorited" then
 			Refresh()
 		end
-		
+
 		self.current_page = Name
 	end
 	
@@ -803,7 +787,7 @@ function AvatarChanger:_create_ui()
 	self.Gui = avatar_changer
 end
 
-function AvatarChanger:_apply_avatar(UserId: IntValue)
+function AvatarChanger:_apply_avatar(UserId: number)
 	local character = LocalPlayer.Character
 	if not character then return end
 	
@@ -837,7 +821,7 @@ function AvatarChanger:_reset_avatar()
 	return self:_apply_avatar(LocalPlayer.UserId)
 end
 
-function AvatarChanger:_add_favorite(UserId: IntValue)
+function AvatarChanger:_add_favorite(UserId: number)
 	for i = 1, #self.Favorites do
 		if self.Favorites[i] == UserId then
 			return false
@@ -851,7 +835,7 @@ function AvatarChanger:_add_favorite(UserId: IntValue)
 	return true
 end
 
-function AvatarChanger:_remove_favorite(UserId: IntValue)
+function AvatarChanger:_remove_favorite(UserId: number)
 	for i = 1, #self.Favorites do
 		if self.Favorites[i] == UserId then
 			table.remove(self.Favorites, i)
@@ -864,20 +848,22 @@ function AvatarChanger:_remove_favorite(UserId: IntValue)
 end
 
 function AvatarChanger:_load_favorites()
-	if not isfile(self.FavoritesFile) then return end
-	
+	if not isfile(self.FavoritesFile) then 
+		return {}
+	end
+
 	local success, data = pcall(function()
 		return HttpService:JSONDecode(readfile(self.FavoritesFile))
 	end)
 
-	if success then
+	if success and type(data) == "table" then
 		return data
 	end
 
 	return {}
 end
 
-function AvatarChanger:_save_favorites(Data: {IntValue})
+function AvatarChanger:_save_favorites(Data: {number})
 	writefile(self.FavoritesFile, HttpService:JSONEncode(Data))
 end
 
@@ -911,7 +897,7 @@ function AvatarChanger:_dragify(Frame: Instance, Speed: NumberValue)
 	end)
 end
 
-function AvatarChanger:_get_username(UserId: IntValue)
+function AvatarChanger:_get_username(UserId: number)
 	if self.StoredNames[UserId] then
 		return self.StoredNames[UserId]
 	end

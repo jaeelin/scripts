@@ -37,11 +37,19 @@ Core.Features.AutoQuest = {
 	Enabled = false
 }
 
-Core.Features.AutoSteal = {
+Core.Features.AutoStealItems = {
+	Enabled = false
+}
+
+Core.Features.AutoStealGems = {
 	Enabled = false
 }
 
 Core.Features.NoSlow = {
+	Enabled = false
+}
+
+Core.Features.AutoBreakGlass = {
 	Enabled = false
 }
 
@@ -182,6 +190,7 @@ local sections = {
 	main_left_bottom = tabs.Main:Section({ Side = "Left" }),
 	main_right = tabs.Main:Section({ Side = "Right" }),
 	main_right_bottom = tabs.Main:Section({ Side = "Right" }),
+	main_right_bottom2 = tabs.Main:Section({ Side = "Right" }),
 	mobility_left = tabs.Mobility:Section({ Side = "Left" }),
 	mobility_right = tabs.Mobility:Section({ Side = "Right" }),
 	mobility_right2 = tabs.Mobility:Section({ Side = "Right" }),
@@ -256,14 +265,14 @@ sections.main_left:Button({
 	end
 })
 
-AutoSteal = sections.main_left_bottom:Toggle({
-	Name = "AutoSteal",
-	Default = Core.Features.AutoSteal.Enabled,
+AutoStealItems = sections.main_left_bottom:Toggle({
+	Name = "Auto Steal Items",
+	Default = Core.Features.AutoStealItems.Enabled,
 	Callback = function(state)
-		Core.Features.AutoSteal.Enabled = state
+		Core.Features.AutoStealItems.Enabled = state
 
 		if state then
-			Core.Connections.AutoSteal = Services.RunService.PreRender:Connect(function(delta)
+			Core.Connections.AutoStealItems = Services.RunService.PreRender:Connect(function(delta)
 				local map = workspace:FindFirstChild("Map")
 				if not map then return end
 
@@ -273,36 +282,76 @@ AutoSteal = sections.main_left_bottom:Toggle({
 				local natural = stealable_items:FindFirstChild("Natural")
 				if not natural then return end
 				
-				for _, folder in {natural, stealable_items} do
-					for _, item in folder:GetChildren() do
-						pcall(function()
-							Services.ReplicatedStorage.Remotes.AutoGrabItems:FireServer(item)
-						end)
-					end
+				for _, item in natural:GetChildren() do
+					pcall(function()
+						Services.ReplicatedStorage.Remotes.AutoGrabItems:FireServer(item)
+					end)
 				end
 			end)
 		else
-			if Core.Connections.AutoSteal then
-				Core.Connections.AutoSteal:Disconnect()
-				Core.Connections.AutoSteal = nil
+			if Core.Connections.AutoStealItems then
+				Core.Connections.AutoStealItems:Disconnect()
+				Core.Connections.AutoStealItems = nil
 			end
 		end
 	end,
-}, "AutoSteal")
+}, "AutoStealItems")
 
-Core.Keybinds.AutoStealKeybind = sections.main_left_bottom:Keybind({
-	Name = "Auto Steal Keybind",
+Core.Keybinds.AutoStealItemsKeybind = sections.main_left_bottom:Keybind({
+	Name = "Auto Steal Items Keybind",
 	Blacklist = false,
 	onBindHeld = function(held)
 		if held then
-			Core.Features.AutoSteal.Enabled = not Core.Features.AutoSteal.Enabled
-			AutoSteal:UpdateState(Core.Features.AutoSteal.Enabled)
+			Core.Features.AutoStealItems.Enabled = not Core.Features.AutoStealItems.Enabled
+			AutoStealItems:UpdateState(Core.Features.AutoStealItems.Enabled)
 		end
 	end,
-}, "AutoStealKeybind")
+}, "AutoStealItemsKeybind")
+
+AutoStealGems = sections.main_left_bottom:Toggle({
+	Name = "Auto Steal Gems",
+	Default = Core.Features.AutoStealGems.Enabled,
+	Callback = function(state)
+		Core.Features.AutoStealGems.Enabled = state
+
+		if state then
+			Core.Connections.AutoStealGems = Services.RunService.PreRender:Connect(function(delta)
+				local map = workspace:FindFirstChild("Map")
+				if not map then return end
+
+				local stealable_items = map:FindFirstChild("StealableItems")
+				if not stealable_items then return end
+
+				for _, item in stealable_items:GetChildren() do
+					if item.Name ~= "Gem" then continue end
+					
+					pcall(function()
+						Services.ReplicatedStorage.Remotes.AutoGrabItems:FireServer(item)
+					end)
+				end
+			end)
+		else
+			if Core.Connections.AutoStealGems then
+				Core.Connections.AutoStealGems:Disconnect()
+				Core.Connections.AutoStealGems = nil
+			end
+		end
+	end,
+}, "AutoStealGems")
+
+Core.Keybinds.AutoStealGemsKeybind = sections.main_left_bottom:Keybind({
+	Name = "Auto Steal Gems Keybind",
+	Blacklist = false,
+	onBindHeld = function(held)
+		if held then
+			Core.Features.AutoStealGems.Enabled = not Core.Features.AutoStealGems.Enabled
+			AutoStealGems:UpdateState(Core.Features.AutoStealGems.Enabled)
+		end
+	end,
+}, "AutoStealGemsKeybind")
 
 AutoQuest = sections.main_right:Toggle({
-	Name = "AutoQuest",
+	Name = "Auto Quest",
 	Default = Core.Features.AutoQuest.Enabled,
 	Callback = function(state)
 		Core.Features.AutoQuest.Enabled = state
@@ -355,7 +404,7 @@ Core.Keybinds.AutoQuestKeybind = sections.main_right:Keybind({
 }, "AutoQuestKeybind")
 
 NoSlow = sections.main_right_bottom:Toggle({
-	Name = "NoSlow",
+	Name = "No Slow",
 	Default = Core.Features.NoSlow.Enabled,
 	Callback = function(state)
 		Core.Features.NoSlow.Enabled = state
@@ -385,6 +434,46 @@ Core.Keybinds.NoSlowKeybind = sections.main_right_bottom:Keybind({
 		end
 	end,
 }, "NoSlowKeybind")
+
+AutoBreakGlass = sections.main_right_bottom2:Toggle({
+	Name = "Auto Break Glass",
+	Default = Core.Features.AutoBreakGlass.Enabled,
+	Callback = function(state)
+		Core.Features.AutoBreakGlass.Enabled = state
+
+		if state then
+			Core.Connections.AutoBreakGlass = Services.RunService.PreRender:Connect(function(delta)
+				local map = workspace:FindFirstChild("Map")
+				if not map then return end
+
+				local breakable_glass = map:FindFirstChild("BreakableGlass")
+				if not breakable_glass then return end
+				
+				for _, glass in next, breakable_glass:GetChildren() do
+					pcall(function()
+						Services.ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Utilities"):WaitForChild("BreakWindow"):FireServer(glass)
+					end)
+				end
+			end)
+		else
+			if Core.Connections.AutoBreakGlass then
+				Core.Connections.AutoBreakGlass:Disconnect()
+				Core.Connections.AutoBreakGlass = nil
+			end
+		end
+	end,
+}, "AutoBreakGlass")
+
+Core.Keybinds.AutoBreakGlassKeybind = sections.main_right_bottom2:Keybind({
+	Name = "Auto Break Glass Keybind",
+	Blacklist = false,
+	onBindHeld = function(held)
+		if held then
+			Core.Features.AutoBreakGlass.Enabled = not Core.Features.AutoBreakGlass.Enabled
+			AutoBreakGlass:UpdateState(Core.Features.AutoBreakGlass.Enabled)
+		end
+	end,
+}, "AutoBreakGlassKeybind")
 
 --[[ MOBILITY ]]--
 

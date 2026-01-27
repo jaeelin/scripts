@@ -7,7 +7,7 @@ getgenv().Core = {}
 
 local Core = getgenv().Core
 
-Core.Version = "1.0.0"
+Core.Version = "1.0.1"
 Core.Loaded = true
 
 Core.Services = {}
@@ -32,10 +32,6 @@ local PlayerESPLib = loadstring(game:HttpGet("https://raw.githubusercontent.com/
 local MacLib = loadstring(game:HttpGet("https://github.com/jaeelin/MacLib/releases/latest/download/MacLib.txt"))()
 
 --[[ FEATURE SETUP ]]--
-
-Core.Features.AutoQuest = {
-	Enabled = false
-}
 
 Core.Features.AutoStealItems = {
 	Enabled = false
@@ -126,6 +122,18 @@ Core.Config = {
 	NameInput = ""
 }
 
+--[[ UI ]]--
+
+local window = MacLib:Window({
+	Title = "UDSploit",
+	Subtitle = "Premium Script – v" .. Core.Version,
+	Size = Services.UserInputService.TouchEnabled and UDim2.fromOffset(600, 400) or UDim2.fromOffset(800, 600),
+	DragStyle = 1,
+	ShowUserInfo = true,
+	Keybind = Enum.KeyCode.RightAlt,
+	AcrylicBlur = true,
+})
+
 --[[ UTILITIES ]]--
 
 function Core:GetCharacter(player)
@@ -155,6 +163,35 @@ function Core:GetParts(player)
 	return character, humanoid, humanoid_root_part
 end
 
+function Core:Warn(Type: string, Description: string, Duration: number)
+	window:Notify({
+		Title = Type,
+		Description = Description,
+		Lifetime = Duration
+	})
+end
+
+function Core:Prompt(Type: string, Description: string, Duration: number, Script: () -> ())
+	window:Dialog({
+		Title = Type,
+		Description = Description,
+		Duration = Duration,
+		Buttons = {
+			{
+				Name = "Confirm",
+				Callback = function()
+					if Script then
+						Script()
+					end
+				end
+			},
+			{
+				Name = "Cancel"
+			}
+		}
+	})
+end
+
 function Core:RefreshConfigs(dropdown)
 	dropdown:ClearOptions()
 	dropdown:InsertOptions(MacLib:RefreshConfigList() or {})
@@ -162,17 +199,7 @@ end
 
 --[[ FEATURES ]]--
 
-local folder_name = "UDSploit/Testing"
-
-local window = MacLib:Window({
-	Title = "UDSploit",
-	Subtitle = "Premium Script – v" .. Core.Version,
-	Size = Services.UserInputService.TouchEnabled and UDim2.fromOffset(600, 400) or UDim2.fromOffset(800, 600),
-	DragStyle = 1,
-	ShowUserInfo = true,
-	Keybind = Enum.KeyCode.RightAlt,
-	AcrylicBlur = true,
-})
+local folder_name = "UDSploit/9472441390"
 
 MacLib:SetFolder(folder_name)
 
@@ -190,7 +217,6 @@ local sections = {
 	main_left_bottom = tabs.Main:Section({ Side = "Left" }),
 	main_right = tabs.Main:Section({ Side = "Right" }),
 	main_right_bottom = tabs.Main:Section({ Side = "Right" }),
-	main_right_bottom2 = tabs.Main:Section({ Side = "Right" }),
 	mobility_left = tabs.Mobility:Section({ Side = "Left" }),
 	mobility_right = tabs.Mobility:Section({ Side = "Right" }),
 	mobility_right2 = tabs.Mobility:Section({ Side = "Right" }),
@@ -210,12 +236,22 @@ sections.main_left:Button({
 	Callback = function()
 		local map = workspace:FindFirstChild("Map")
 		if not map then return end
-		
+
 		local npc_folder = map:FindFirstChild("NPCS")
 		if not npc_folder then return end
-		
+
 		pcall(function()
-			Services.ReplicatedStorage.Remotes.AutoGrabItems:FireServer(npc_folder)
+			for _, guard in next, npc_folder:GetChildren() do
+				if guard:IsA("Model") then
+					for _, part in next, guard:GetChildren() do
+						if part:IsA("BasePart") then
+							pcall(function()
+								Services.ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Utilities"):WaitForChild("BreakWindow"):FireServer(part)
+							end)
+						end
+					end
+				end
+			end
 		end)
 	end
 })
@@ -230,7 +266,17 @@ sections.main_left:Button({
 		if not doors_folder then return end
 
 		pcall(function()
-			Services.ReplicatedStorage.Remotes.AutoGrabItems:FireServer(doors_folder)
+			for _, door in next, doors_folder:GetChildren() do
+				if door:IsA("Model") then
+					for _, part in next, door:GetDescendants() do
+						if part:IsA("BasePart") then
+							pcall(function()
+								Services.ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Utilities"):WaitForChild("BreakWindow"):FireServer(part)
+							end)
+						end
+					end
+				end
+			end
 		end)
 	end
 })
@@ -243,9 +289,13 @@ sections.main_left:Button({
 
 		local breakable_glass_folder = map:FindFirstChild("BreakableGlass")
 		if not breakable_glass_folder then return end
-
+		
 		pcall(function()
-			Services.ReplicatedStorage.Remotes.AutoGrabItems:FireServer(breakable_glass_folder)
+			for _, glass in next, breakable_glass_folder:GetChildren() do
+				if glass:IsA("BasePart") then
+					Services.ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Utilities"):WaitForChild("BreakWindow"):FireServer(glass)
+				end
+			end
 		end)
 	end
 })
@@ -258,9 +308,19 @@ sections.main_left:Button({
 
 		local cameras_folder = map:FindFirstChild("Cameras")
 		if not cameras_folder then return end
-
+		
 		pcall(function()
-			Services.ReplicatedStorage.Remotes.AutoGrabItems:FireServer(cameras_folder)
+			for _, camera in next, cameras_folder:GetChildren() do
+				if camera:IsA("Model") then
+					for _, part in next, camera:GetChildren() do
+						if part:IsA("BasePart") then
+							pcall(function()
+								Services.ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("Utilities"):WaitForChild("BreakWindow"):FireServer(part)
+							end)
+						end
+					end
+				end
+			end
 		end)
 	end
 })
@@ -350,60 +410,7 @@ Core.Keybinds.AutoStealGemsKeybind = sections.main_left_bottom:Keybind({
 	end,
 }, "AutoStealGemsKeybind")
 
-AutoQuest = sections.main_right:Toggle({
-	Name = "Auto Quest",
-	Default = Core.Features.AutoQuest.Enabled,
-	Callback = function(state)
-		Core.Features.AutoQuest.Enabled = state
-
-		if state then
-			Core.Connections.AutoQuest = Services.RunService.PreRender:Connect(function(delta)
-				local quest_folder = LocalPlayer:FindFirstChild("QuestFolder")
-				if not quest_folder then return end
-				
-				local player_gui = LocalPlayer.PlayerGui
-				if not player_gui then return end
-				
-				local main_ui = player_gui:FindFirstChild("MainUI")
-				if not main_ui then return end
-				
-				local free_gift = main_ui:FindFirstChild("FreeGift")
-				if not free_gift then return end
-				
-				if free_gift.Enabled then
-					free_gift.Enabled = false
-				end
-				
-				for _, quest in next, quest_folder:GetChildren() do
-					local args = {
-						quest.Name
-					}
-					pcall(function()
-						Services.ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("ClaimQuestReward"):FireServer(unpack(args))
-					end)
-				end
-			end)
-		else
-			if Core.Connections.AutoQuest then
-				Core.Connections.AutoQuest:Disconnect()
-				Core.Connections.AutoQuest = nil
-			end
-		end
-	end,
-}, "AutoQuest")
-
-Core.Keybinds.AutoQuestKeybind = sections.main_right:Keybind({
-	Name = "Auto Quest Keybind",
-	Blacklist = false,
-	onBindHeld = function(held)
-		if held then
-			Core.Features.AutoQuest.Enabled = not Core.Features.AutoQuest.Enabled
-			AutoQuest:UpdateState(Core.Features.AutoQuest.Enabled)
-		end
-	end,
-}, "AutoQuestKeybind")
-
-NoSlow = sections.main_right_bottom:Toggle({
+NoSlow = sections.main_right:Toggle({
 	Name = "No Slow",
 	Default = Core.Features.NoSlow.Enabled,
 	Callback = function(state)
@@ -424,7 +431,7 @@ NoSlow = sections.main_right_bottom:Toggle({
 	end,
 }, "NoSlow")
 
-Core.Keybinds.NoSlowKeybind = sections.main_right_bottom:Keybind({
+Core.Keybinds.NoSlowKeybind = sections.main_right:Keybind({
 	Name = "No Slow Keybind",
 	Blacklist = false,
 	onBindHeld = function(held)
@@ -435,7 +442,7 @@ Core.Keybinds.NoSlowKeybind = sections.main_right_bottom:Keybind({
 	end,
 }, "NoSlowKeybind")
 
-AutoBreakGlass = sections.main_right_bottom2:Toggle({
+AutoBreakGlass = sections.main_right_bottom:Toggle({
 	Name = "Auto Break Glass",
 	Default = Core.Features.AutoBreakGlass.Enabled,
 	Callback = function(state)
@@ -464,7 +471,7 @@ AutoBreakGlass = sections.main_right_bottom2:Toggle({
 	end,
 }, "AutoBreakGlass")
 
-Core.Keybinds.AutoBreakGlassKeybind = sections.main_right_bottom2:Keybind({
+Core.Keybinds.AutoBreakGlassKeybind = sections.main_right_bottom:Keybind({
 	Name = "Auto Break Glass Keybind",
 	Blacklist = false,
 	onBindHeld = function(held)

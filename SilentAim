@@ -1,0 +1,63 @@
+local player_service = game:GetService("Players")
+
+local player = player_service.LocalPlayer
+
+local camera = workspace.CurrentCamera
+
+local mouse = player:GetMouse()
+
+local function get_closest()
+    local closest_target = nil
+    local shortest = math.huge
+
+    local character = player.Character
+    if not character then return end
+
+    local humanoid_root_part = character.FindFirstChild(character, "HumanoidRootPart")
+    if not humanoid_root_part then return end
+
+    for i, target in next, player_service.GetPlayers(player_service) do
+        if target ~= player and target.Character then
+
+            local target_character = target.Character
+            if not target_character then continue end
+
+            local target_humanoid_root_part = target_character.FindFirstChild(target_character, "HumanoidRootPart")
+            if not target_humanoid_root_part then continue end
+
+            local world_distance = (humanoid_root_part.Position - target_humanoid_root_part.Position).Magnitude
+
+            local screen_position, on_screen = camera.WorldToViewportPoint(camera, target_humanoid_root_part.Position)
+            if not on_screen then continue end
+
+            local distance = (Vector2.new(screen_position.X, screen_position.Y) - Vector2.new(camera.ViewportSize.X / 2, camera.ViewportSize.Y / 2)).Magnitude
+
+            if distance < shortest then
+                shortest = distance
+                closest_target = target_humanoid_root_part
+            end
+        end
+    end
+
+    return closest_target
+end
+
+local hook; hook = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
+    local args = {...}
+    local method = getnamecallmethod()
+
+    if not checkcaller() and method == "FireServer" and self.Name == "ShootEvent" then
+        local closest = get_closest()
+        if closest then
+            args[1][1][1] = game.Players.LocalPlayer.Character.HumanoidRootPart.Position
+            args[1][1][2] = closest.Position
+            args[1][1][3] = closest
+        end
+
+        return hook(self, unpack(args))
+    end
+
+    return hook(self, ...)
+end))
+
+warn("loaded")

@@ -714,20 +714,35 @@ function AvatarChanger:_create_ui()
 		local shirt_id = tonumber(shirt_id_input.Text)
 		local pants_id = tonumber(pants_id_input.Text)
 
-		local humanoid = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+		local character = game.Players.LocalPlayer.Character
+		if not character then return end
+
+		local humanoid = character:FindFirstChildOfClass("Humanoid")
 		if not humanoid then return end
 
-		local description = humanoid:GetAppliedDescription()
+		local desc = humanoid:GetAppliedDescription()
 
 		if shirt_id and shirt_id > 0 then
-			description.Shirt = shirt_id
+			for _, item in next, character:GetChildren() do
+				if item:IsA("Shirt")then
+					item:Destroy()
+				end
+			end
+			
+			desc.Shirt = shirt_id
 		end
 
 		if pants_id and pants_id > 0 then
-			description.Pants = pants_id
+			for _, item in next, character:GetChildren() do
+				if item:IsA("Pants")then
+					item:Destroy()
+				end
+			end
+			
+			desc.Pants = pants_id
 		end
 
-		humanoid:ApplyDescriptionClientServer(description)
+		humanoid:ApplyDescriptionClientServer(desc)
 	end)
 
 	random.MouseButton1Click:Connect(function()
